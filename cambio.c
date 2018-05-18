@@ -106,29 +106,27 @@ void pushToHuecos(Huecos *h, Process *p){
 
 
 Process* lookForBiggestGap(Memory *m, Huecos *h){
-	printf("\nBuscando el peor ajuste\n");
+	printf("Buscando el peor ajuste");
 	Process *cursor = (Process *)malloc(sizeof(Process)); 
 	Process *maxHueco = (Process *)malloc(sizeof(Process)); 
 	cursor = m->first;
-	//Volvemos NULL para no regresar basura
-	maxHueco->next = NULL;
-	maxHueco->pId = 0;
 
 	while(cursor != NULL){
-		//POR AQUÏ ENTRA A UN LOOP INFINITO
-		printf("\nwhile %d\n", cursor->pId);
+		printf("while %d\n", cursor->pId);
 		if(cursor->pAllocated == 0){
 			if(maxHueco == NULL){
 				maxHueco = cursor;
-				printf("\nprimera asignacion de hueco: %d, con tamaño: %d\n ", maxHueco->pId, maxHueco->pSize);
+				printf("primera asignacion de hueco: %d, con tamaño: %d\n ", maxHueco->pId, maxHueco->pSize);
 				return maxHueco;
 			}
 			if(cursor->pSize > maxHueco->pSize){
 				maxHueco = cursor;
-				printf("\nSe reasigna maxhueco, el máximo es: %d con tamaño %d\n",  maxHueco->pId, maxHueco->pSize);
+				printf("Se reasigna maxhueco, el máximo es: %d con tamaño %d",  maxHueco->pId, maxHueco->pSize);
+			}else{
+				return maxHueco;
 			}
 			// printf("Hueco en :: %d, con tamaño: %d\n", cursor->pId, cursor->pSize);
-			//pushToHuecos(h, cursor);
+			pushToHuecos(h, cursor);
 		}
 		cursor = cursor->next;
 	}
@@ -153,9 +151,9 @@ void pushToMemory(Memory *m, Process *p, Huecos *h){
 		/// la borro :v m->mSize = m->mSize - p->pSize;
 
 	}else{
-		printf("\n Pushing to memory in else se quieren %d \n", p->pSize);
+		printf("Pushing to memory in else");
 		if((m->mSize - (m->last->pLocation + m->last->pSize)) < p->pSize){
-			printf("\n mSize: %d, m->last->pLocation: %d, m->last->pSize->: %d, p->size: %d \n", m->mSize, m->last->pLocation,  m->last->pSize, p->pSize);
+			printf("mSize: %d, m->last->pLocation: %d, m->last->pSize->: %d, p->size: %d", m->mSize, m->last->pLocation,  m->last->pSize, p->pSize);
 			printf("Ya no cabe en la lista, buscando en los huecos\n");
 			Process *px = (Process *)malloc(sizeof(Process)); 
 		 	px = lookForBiggestGap(m, h);	
@@ -164,44 +162,33 @@ void pushToMemory(Memory *m, Process *p, Huecos *h){
 
 
 			
-			printf("\n--- px->pSize %d >= p->pSize %d  ---\n", px->pSize, p->pSize);
+			printf("\n------\n");
 			if(px->pSize >= p->pSize){
 				printf("\n---Se inserta proceso en hueco----\n");
-				getchar();
+
 				int newGapSize = px->pSize - p->pSize;
 				px->pId = p->pId;
 				px->pAllocated = 1;
 				px->pSize = p->pSize;
-				printf("\n---Success id: %d, psize %d----\n",px->pId,px->pSize );
-
-				getchar();
+				
 				if(newGapSize > 0){
 					Process *hueco = (Process*)malloc(sizeof(Process));
 					hueco = initProcess(hueco, 9999, newGapSize);
 					//Vuelvo el proceso un hueco con el allocated = 0
-					printf("\n****\n Reasignacion de apuntadores \n****\n " );
-					getchar();
 					hueco->pAllocated = 0;
 					hueco->pLocation = px->pSize + px->pLocation;
 					hueco->next = px->next;
-					printf("\n****\n hueco->pLocation: %d \n****\n ", hueco->pLocation );
-					printf("hueco->next->pId: %d \n", hueco->next->pId );
 					px->next = hueco;
 					hueco->prev  = px;
-					printf("px->next: %d \n", px->next->pId );
-					printf("hueco->prev: %d \n", hueco->prev->pId );
-					printf("px->prev: %d \n", px->prev->pId );
-					
-
 
 				}
-				//lookForBiggestGap(m, h);
+				lookForBiggestGap(m, h);
 			}else{
-				printf("\n ************ \n No cabe en ningun hueco \n ************ \n");
+				printf("Ya no hay espacio en la memoria\n");
 			}
 			
 		}else{
-			printf("Si te cabe en la lista, asignando al final de la lista.\n\n");
+			printf("Si te cabe en la lista, asignando al final de la lista.\n");
 				p->next = NULL;
 				m->last->next = p;
 				p->prev = m->last;
@@ -265,17 +252,3 @@ int main(int argc, char ** argv){
    }
     return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
