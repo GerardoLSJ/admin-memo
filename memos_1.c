@@ -32,7 +32,7 @@ typedef struct Huecos{
 
 
 typedef struct Queue{
-	int pending;
+	int length;
 	Process *last;
 	Process *first;
 }Queue;
@@ -40,6 +40,7 @@ typedef struct Queue{
 
 
 /********** *Inicializar estructuras *********/
+
 void initMemory(Memory *m){
 	m->mSize = 3000;
 	m->mOffset = 1500;
@@ -51,6 +52,13 @@ void initMemory(Memory *m){
 void initHuecos(Huecos *h){
 	h->last = NULL;
 	h->first = NULL;
+}
+
+
+void initQueue(Queue *q){
+	q->last = NULL;
+	q->first = NULL;
+	q->length = 0;
 }
 
 
@@ -87,6 +95,21 @@ void printHuecosInfo(Huecos *h){
 }
 
 
+void printQueueInfo(Queue *q){
+	//malloc problem
+	printf("\n\n -------- COLA ---------- \n");
+	Process *cursor = (Process *)malloc(sizeof(Process)); 
+	cursor = q->first;
+	while(cursor != NULL){
+		printf("Nodo: %d en la cola \n", cursor->pId);
+		cursor = cursor->next;
+	}
+	printf("----------\n");
+	return;
+}
+
+
+
 
 /**********  Huecos  ***********/
 
@@ -115,8 +138,6 @@ Process* lookForBiggestGap(Memory *m, Huecos *h){
 	maxHueco->pId = 0;
 
 	while(cursor != NULL){
-		//POR AQUÏ ENTRA A UN LOOP INFINITO
-		printf("\nwhile %d\n", cursor->pId);
 		if(cursor->pAllocated == 0){
 			if(maxHueco == NULL){
 				maxHueco = cursor;
@@ -140,9 +161,69 @@ Process* lookForBiggestGap(Memory *m, Huecos *h){
 
 
 
+
+/*************  Queue  ***************/
+
+void cleanMemory(Memory *m, Queue *q){
+	Process *cursor = (Process *)malloc(sizeof(Process)); 
+	cursor = m->first;
+	while(cursor != NULL){
+		if(cursor->pAllocated == 0){
+			//Es un hueco, A POR ÉL
+			if(cursor->prev == NULL){
+				//Es el inicio de la memoria
+				m->first = cursor->next;
+				cursor->next->prev = NULL;
+			}else{
+				cursor->prev->next = cursor->next;
+				cursor->next->prev = cursor->prev;
+				cursor->next->pLocation = cursor->next->prev->pLocation + cursor->next->prev->pSize; // está bien esto???
+			}
+			//Eliminar de la memoria real el cursor que ya no está referenciado (garbage collection)
+		}
+		printf("Hueco con id %d eliminado\n", cursor->pId);
+		cursor = cursor->next;
+	}
+	q->length = 0;
+}
+
+
+
+void pushToQueue(Queue *q, Process *p, Memory *m){
+	printf("Process %d queued\n", p->pId);
+	if(q->first == NULL && q->last == NULL){
+		//Es el primer nodo
+		q->first = p;
+		q->last = p;
+		return;
+	}
+	if(q->length > 4){
+		printf("Límite de a cola alcanzado, haciendo limpieza \n");
+		cleanMemory(m, q);
+		return;
+	}
+	//Apunta al primer nodo, pues se encuentran en una lista diferente a la de la memoria. No hay problema con eso
+	q->last->next = p;
+	p->prev = q->last;
+	q->last = p; 
+	p->next = NULL;
+	// p->pLocation = m->last->pLocation + m->last->pSize; ?? location not currently knowed
+	q->length = q->length+1;
+	printf("Procesos encolados: %d\n", q->length);
+
+
+	printQueueInfo(q);
+
+}
+
+
+
+
+
+
 /*************  Memory  ***************/
 
-void pushToMemory(Memory *m, Process *p, Huecos *h){
+void pushToMemory(Memory *m, Process *p, Huecos *h, Queue *q){
 	if(m->first == NULL && m->last == NULL){
 		p->pLocation = m->mOffset;
 		//Es el primer nodo
@@ -153,34 +234,28 @@ void pushToMemory(Memory *m, Process *p, Huecos *h){
 		/// la borro :v m->mSize = m->mSize - p->pSize;
 
 	}else{
-		printf("\n Pushing to memory in else se quieren %d \n", p->pSize);
 		if((m->mSize - (m->last->pLocation + m->last->pSize)) < p->pSize){
-			printf("\n mSize: %d, m->last->pLocation: %d, m->last->pSize->: %d, p->size: %d \n", m->mSize, m->last->pLocation,  m->last->pSize, p->pSize);
-			printf("Ya no cabe en la lista, buscando en los huecos\n");
+			printf("\n YA no cabe en lista, buscando en huecos: mSize: %d, m->last->pLocation: %d, m->last->pSize->: %d, p->size: %d \n", m->mSize, m->last->pLocation,  m->last->pSize, p->pSize);
 			Process *px = (Process *)malloc(sizeof(Process)); 
 		 	px = lookForBiggestGap(m, h);	
 
-			printf("\n----xxx--\n");
 
 
 			
-			printf("\n--- px->pSize %d >= p->pSize %d  ---\n", px->pSize, p->pSize);
+			// printf("\n--- px->pSize %d >= p->pSize %d  ---\n", px->pSize, p->pSize);
 			if(px->pSize >= p->pSize){
 				printf("\n---Se inserta proceso en hueco----\n");
-				getchar();
 				int newGapSize = px->pSize - p->pSize;
 				px->pId = p->pId;
 				px->pAllocated = 1;
 				px->pSize = p->pSize;
 				printf("\n---Success id: %d, psize %d----\n",px->pId,px->pSize );
 
-				getchar();
 				if(newGapSize > 0){
 					Process *hueco = (Process*)malloc(sizeof(Process));
 					hueco = initProcess(hueco, 9999, newGapSize);
 					//Vuelvo el proceso un hueco con el allocated = 0
 					printf("\n****\n Reasignacion de apuntadores \n****\n " );
-					getchar();
 					hueco->pAllocated = 0;
 					hueco->pLocation = px->pSize + px->pLocation;
 					hueco->next = px->next;
@@ -188,25 +263,19 @@ void pushToMemory(Memory *m, Process *p, Huecos *h){
 					//printf("hueco->next->pId: %d \n", hueco->next->pId );
 					px->next = hueco;
 					hueco->prev  = px;
-					printf("px->next: %d \n", px->next->pId );
-					printf("hueco->prev: %d \n", hueco->prev->pId );
-					printf("px->prev: %d \n", px->prev->pId );
-					
-
-
 				}
 				//lookForBiggestGap(m, h);
 			}else{
-				printf("\n ************ \n No cabe en ningun hueco \n ************ \n");
+				printf("\n ************ \n No cabe en ningun hueco, agregando a la cola \n ************ \n");
+				pushToQueue(q, p, m);
 			}
 			
 		}else{
-			printf("Si te cabe en la lista, asignando al final de la lista.\n\n");
 				p->next = NULL;
 				m->last->next = p;
 				p->prev = m->last;
 				p->pLocation = m->last->pLocation + m->last->pSize; 
-				printf("Allocated in: %d\n", p->pLocation);
+				printf("Agregado al final de la lista en Allocated in: %d\n", p->pLocation);
 				m->last = p; 
 		}
 	}
@@ -241,8 +310,11 @@ int main(int argc, char ** argv){
 
     Memory *m = (Memory*)malloc(sizeof(Memory));
     Huecos *h = (Huecos*)malloc(sizeof(Huecos));
+    Queue *q = (Queue*)malloc(sizeof(Queue));
+
     initMemory(m);
 	initHuecos(h);
+	initQueue(q);
 
     if(fptr == NULL){
       printf("Error al abrir el archivo.");   
@@ -258,24 +330,10 @@ int main(int argc, char ** argv){
    			printf("se va a deallocar\n");
    			popFromMemory(m, pId);
    		}else{
-			pushToMemory(m, p, h);
+			pushToMemory(m, p, h, q);
    		}
 		i++;
 		getchar();   		
    }
     return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
