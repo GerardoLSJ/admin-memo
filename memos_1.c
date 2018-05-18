@@ -7,7 +7,6 @@
 #define MEMORY_OFFSET = 1500
 
 
-
 /*********************  Estructuras de Datos *********************/
 
 typedef struct Process{
@@ -37,6 +36,8 @@ typedef struct Queue{
 	Process *first;
 }Queue;
 
+void pushToQueue(Queue *q, Process *p, Memory *m, Huecos *h);
+void pushToMemory(Memory *m, Process *p, Huecos *h, Queue *q);
 
 
 /********** *Inicializar estructuras *********/
@@ -76,8 +77,9 @@ Process* initProcess(Process* p, int pId, int pSize){
 void printMemoryInfo(Memory *m){
 	Process *cursor = (Process *)malloc(sizeof(Process)); 
 	cursor = m->first;
+	printf("\n\n -----------Estado de la memoria-------	 \n");
 	while(cursor != NULL){
-		printf("Nodo: %d, allocated: %d, ubicacion: %d. \n", cursor->pId, cursor->pAllocated, cursor->pLocation);
+		printf("Nodo: %d, allocated: %d, ubicacion: %d, tamaño: \n", cursor->pId, cursor->pAllocated, cursor->pLocation, cursor->pSize);
 		cursor = cursor->next;
 	}
 	return;
@@ -185,11 +187,23 @@ void cleanMemory(Memory *m, Queue *q){
 		cursor = cursor->next;
 	}
 	q->length = 0;
+	return;
+}
+
+
+void cleanQueue(Memory *m, Queue *q, Huecos *h){
+	Process *cursor = (Process *)malloc(sizeof(Process)); 
+	cursor = q->first;
+	while(cursor != NULL){
+		printf("INTENTANDO REINSERTAR PROCESO: %d\n", cursor->pId);
+		pushToMemory(m, cursor, h, q);
+		cursor = cursor->next;
+	}
 }
 
 
 
-void pushToQueue(Queue *q, Process *p, Memory *m){
+void pushToQueue(Queue *q, Process *p, Memory *m, Huecos *h){
 	printf("Process %d queued\n", p->pId);
 	if(q->first == NULL && q->last == NULL){
 		//Es el primer nodo
@@ -200,12 +214,13 @@ void pushToQueue(Queue *q, Process *p, Memory *m){
 	if(q->length > 4){
 		printf("Límite de a cola alcanzado, haciendo limpieza \n");
 		cleanMemory(m, q);
+		cleanQueue(m, q, h);
 		return;
 	}
 	//Apunta al primer nodo, pues se encuentran en una lista diferente a la de la memoria. No hay problema con eso
-	q->last->next = p;
 	p->prev = q->last;
 	q->last = p; 
+	q->last->next = p;
 	p->next = NULL;
 	// p->pLocation = m->last->pLocation + m->last->pSize; ?? location not currently knowed
 	q->length = q->length+1;
@@ -235,13 +250,10 @@ void pushToMemory(Memory *m, Process *p, Huecos *h, Queue *q){
 
 	}else{
 		if((m->mSize - (m->last->pLocation + m->last->pSize)) < p->pSize){
-			printf("\n YA no cabe en lista, buscando en huecos: mSize: %d, m->last->pLocation: %d, m->last->pSize->: %d, p->size: %d \n", m->mSize, m->last->pLocation,  m->last->pSize, p->pSize);
+			printf("\n YA no cabe en lista, buscando en huecos: mSize");
 			Process *px = (Process *)malloc(sizeof(Process)); 
 		 	px = lookForBiggestGap(m, h);	
 
-
-
-			
 			// printf("\n--- px->pSize %d >= p->pSize %d  ---\n", px->pSize, p->pSize);
 			if(px->pSize >= p->pSize){
 				printf("\n---Se inserta proceso en hueco----\n");
@@ -267,7 +279,7 @@ void pushToMemory(Memory *m, Process *p, Huecos *h, Queue *q){
 				//lookForBiggestGap(m, h);
 			}else{
 				printf("\n ************ \n No cabe en ningun hueco, agregando a la cola \n ************ \n");
-				pushToQueue(q, p, m);
+				pushToQueue(q, p, m, h);
 			}
 			
 		}else{
