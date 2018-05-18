@@ -185,7 +185,7 @@ void pushToMemory(Memory *m, Process *p, Huecos *h){
 					hueco->pLocation = px->pSize + px->pLocation;
 					hueco->next = px->next;
 					printf("\n****\n hueco->pLocation: %d \n****\n ", hueco->pLocation );
-					printf("hueco->next->pId: %d \n", hueco->next->pId );
+					//printf("hueco->next->pId: %d \n", hueco->next->pId );
 					px->next = hueco;
 					hueco->prev  = px;
 					printf("px->next: %d \n", px->next->pId );
