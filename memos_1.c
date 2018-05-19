@@ -102,6 +102,9 @@ void printQueueInfo(Queue *q){
 	printf("\n\n -------- COLA ---------- \n");
 	Process *cursor = (Process *)malloc(sizeof(Process)); 
 	cursor = q->first;
+	printf("Nodo: %d en la cola \n", cursor->pId);
+	printf("NodoNEXT: %d en la cola \n", cursor->next->pId);
+
 	while(cursor != NULL){
 		printf("Nodo: %d en la cola \n", cursor->pId);
 		if(cursor->next != NULL){
@@ -202,7 +205,7 @@ void cleanQueue(Memory *m, Queue *q, Huecos *h){
 		pushToMemory(m, cursor, h, q);
 		cursor = cursor->next;
 	}
-	//printQueueInfo(q);
+	printQueueInfo(q);
 	q->length = 0;
 
 }
@@ -215,6 +218,13 @@ void pushToQueue(Queue *q, Process *p, Memory *m, Huecos *h){
 		//Es el primer nodo
 		q->first = p;
 		q->last = p;
+		printf("\n***** \n");
+		printf("\nPRIMER NODO DE LA COLA \n");
+		printf("\n q->first->pid  %d \n", p->pId);
+		printf("\n q->first->pid  %d \n", q->first->pId);
+
+		printf("\n***** \n");
+
 		return;
 	}
 	else if(q->length > 4){
@@ -230,14 +240,24 @@ void pushToQueue(Queue *q, Process *p, Memory *m, Huecos *h){
 	}else{
 	//Apunta al primer nodo, pues se encuentran en una lista diferente a la de la memoria. No hay problema con eso
 	//FALTA: Agregar referencia a next porque no está siendo una cola
-	// q->last->next = p;
-	// p->prev = q->last;
-	// q->last = p; 
-	// p->next = NULL;
-	//gerry
-	q->last = p;
-	p->next = q->first;
-	p->prev = NULL;
+	printf("\n***** REASIGNANDO COLA *** \n");
+	//printf("\n OLD :: q->last->next  %d \n", q->last->next->pId);
+	
+	q->last->next = p;
+	printf("\n NEW :: q->last->next  %d \n", q->last->next->pId);
+	
+	//printf("\n OLD ::p->prev  %d \n",p->prev->pId);
+	p->prev = q->last;
+	printf("\n NEW :: p->prev  %d \n", p->prev->pId);
+	q->last = p->prev;
+	//q->last = q->first; // cambio  
+	printf("\n NEW :: q->last  %d \n", q->last->pId);
+
+	p->next = NULL;
+	// //gerry
+	// q->last = p;
+	// p->next = q->first;
+	// p->prev = NULL;
 
 	// p->pLocation = m->last->pLocation + m->last->pSize; ?? location not currently knowed
 	q->length = q->length+1;
