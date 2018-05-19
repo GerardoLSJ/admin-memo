@@ -186,7 +186,6 @@ void cleanMemory(Memory *m, Queue *q){
 		printf("Hueco con id %d eliminado\n", cursor->pId);
 		cursor = cursor->next;
 	}
-	q->length = 0;
 	return;
 }
 
@@ -199,6 +198,8 @@ void cleanQueue(Memory *m, Queue *q, Huecos *h){
 		pushToMemory(m, cursor, h, q);
 		cursor = cursor->next;
 	}
+	q->length = 0;
+
 }
 
 
@@ -214,13 +215,19 @@ void pushToQueue(Queue *q, Process *p, Memory *m, Huecos *h){
 	if(q->length > 4){
 		printf("Límite de a cola alcanzado, haciendo limpieza \n");
 		cleanMemory(m, q);
+		printf("AQUÍ VA A MOSTRAR ESTA WEADA");
+		printQueueInfo(q);
+		
 		cleanQueue(m, q, h);
+		printQueueInfo(q);
+		
 		return;
 	}
 	//Apunta al primer nodo, pues se encuentran en una lista diferente a la de la memoria. No hay problema con eso
+	//FALTA: Agregar referencia a next porque no está siendo una cola
+	q->last->next = p;
 	p->prev = q->last;
 	q->last = p; 
-	q->last->next = p;
 	p->next = NULL;
 	// p->pLocation = m->last->pLocation + m->last->pSize; ?? location not currently knowed
 	q->length = q->length+1;
@@ -292,6 +299,7 @@ void pushToMemory(Memory *m, Process *p, Huecos *h, Queue *q){
 		}
 	}
 	printMemoryInfo(m);
+	return;
 }
 
 
