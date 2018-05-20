@@ -108,9 +108,9 @@ void printQueueInfo(Queue *q){
 	//EL LOOP INFINITO ERA PORQUE NO HABIA UN NEXT PERO EL PROCESS SI EXISTIA SIEMPRE 
 	while (cursor3->next != NULL) {
     cursor3 = cursor3->next;
-	printf("\n cursor->next-pid ");
+	printf("\n cursor3 - pid %d", cursor3->pId);
   }
-	printf("----------\n");
+	printf("\n----------\n");
 	return;
 }
 
@@ -197,12 +197,15 @@ void cleanMemory(Memory *m, Queue *q){
 void cleanQueue(Memory *m, Queue *q, Huecos *h){
 	Process *cursor = (Process *)malloc(sizeof(Process)); 
 	cursor = q->first;
+
+	// aqui es donde pasan cosas raras//
+
 	while(cursor != NULL){
 		printf("INTENTANDO REINSERTAR PROCESO: %d\n", cursor->pId);
 		pushToMemory(m, cursor, h, q);
 		cursor = cursor->next;
 	}
-	printQueueInfo(q);
+	//printQueueInfo(q);
 	q->length = 0;
 
 }
@@ -237,6 +240,7 @@ void pushToQueue(Queue *q, Process *p, Memory *m, Huecos *h){
 			cursor = cursor->next;
 		}
 		printf("\n AQUI SI SE VE LA QUEYE BIEN ALV getchar() ");
+		printQueueInfo(q);
 		getchar();
 		cleanQueue(m, q, h);
 		//printQueueInfo(q);
