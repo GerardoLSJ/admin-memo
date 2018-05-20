@@ -100,19 +100,16 @@ void printHuecosInfo(Huecos *h){
 void printQueueInfo(Queue *q){
 	//malloc problem
 	printf("\n\n -------- COLA ---------- \n");
-	Process *cursor = (Process *)malloc(sizeof(Process)); 
-	cursor = q->first;
-	printf("Nodo: %d en la cola \n", cursor->pId);
-	printf("NodoNEXT: %d en la cola \n", cursor->next->pId);
+	Process *cursor3 = (Process *)malloc(sizeof(Process)); 
+	cursor3 = q->first;
+	printf("Nodo: %d en la cola \n", cursor3->pId);
+	//printf("NodoNEXT: %d en la cola \n", q->first->next->pId);
 
-	while(cursor != NULL){
-		printf("Nodo: %d en la cola \n", cursor->pId);
-		if(cursor->next != NULL){
-			cursor = cursor->next;
-			printf("NodoNEXT: %d en la cola \n", cursor->pId);
-			getchar();
-		}
-	}
+	//EL LOOP INFINITO ERA PORQUE NO HABIA UN NEXT PERO EL PROCESS SI EXISTIA SIEMPRE 
+	while (cursor3->next != NULL) {
+    cursor3 = cursor3->next;
+	printf("\n cursor->next-pid ");
+  }
 	printf("----------\n");
 	return;
 }
@@ -230,9 +227,17 @@ void pushToQueue(Queue *q, Process *p, Memory *m, Huecos *h){
 	else if(q->length > 4){
 		printf("Límite de a cola alcanzado, haciendo limpieza \n");
 		cleanMemory(m, q);
-		printf("AQUÍ VA A MOSTRAR ESTA WEADA");
+		printf("AQUÍ VA A MOSTRAR ESTA WEADA \n");
 		//printQueueInfo(q);
-		
+		Process *cursor = (Process *)malloc(sizeof(Process)); 
+		cursor = q->first;
+		while (cursor->next != NULL) {
+
+			printf("\n actual :%d, ursor->next-pid %d ",cursor->pId, cursor->next->pId);
+			cursor = cursor->next;
+		}
+		printf("\n AQUI SI SE VE LA QUEYE BIEN ALV getchar() ");
+		getchar();
 		cleanQueue(m, q, h);
 		//printQueueInfo(q);
 		
@@ -241,27 +246,21 @@ void pushToQueue(Queue *q, Process *p, Memory *m, Huecos *h){
 	//Apunta al primer nodo, pues se encuentran en una lista diferente a la de la memoria. No hay problema con eso
 	//FALTA: Agregar referencia a next porque no está siendo una cola
 	printf("\n***** REASIGNANDO COLA *** \n");
-	//printf("\n OLD :: q->last->next  %d \n", q->last->next->pId);
-	
-	q->last->next = p;
-	printf("\n NEW :: q->last->next  %d \n", q->last->next->pId);
-	
-	//printf("\n OLD ::p->prev  %d \n",p->prev->pId);
-	p->prev = q->last;
-	printf("\n NEW :: p->prev  %d \n", p->prev->pId);
-	q->last = p->prev;
-	//q->last = q->first; // cambio  
-	printf("\n NEW :: q->last  %d \n", q->last->pId);
-
-	p->next = NULL;
 	// //gerry
-	// q->last = p;
-	// p->next = q->first;
-	// p->prev = NULL;
+	Process *cursor = (Process *)malloc(sizeof(Process)); 
+	cursor = q->first;
+	while (cursor->next != NULL) {
+    cursor = cursor->next;
+	printf("\n cursor->next-pid ");
+  }
+	cursor->next = p;
+	p->next = NULL;
+	printf("\n NEW :: cursor->pid : %d cursor->next  %d \n", cursor->pId,cursor->next->pId);
 
 	// p->pLocation = m->last->pLocation + m->last->pSize; ?? location not currently knowed
 	q->length = q->length+1;
 	printf("Procesos encolados: %d\n", q->length);
+
 
 
 	}
