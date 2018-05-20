@@ -1,3 +1,31 @@
+// Autores:			Silva García Carlos Sebastian
+//					Lopez Santibañez Jimenez Luis Gerardo
+
+
+/*
+	Descripción:
+		Utilizando el peor ajuste este programa aloja procesos en locaciones de 
+		memoria contigua, cuando se acaba la memoria se busca un hueco para 
+		alojar un nuevo proceso, este hueco debe ser el que tenga la mayor
+		longitus de bits siguiendo el principio del peor ajuste.
+
+		Cuando se alcanzan mas de 5 procesos en espera de alojamineto 
+		se realiza la compactacion de la memoria para liberar espacio
+		y poder asignar los procesos en
+
+	Conclusiones
+		Lopez Santibañez Jimenez Luis Gerardo
+			Este programa ilustra muy bien la realizacion de el alojamiento de memoria
+			en los diferentes sistemas operativos utilzzando una estrategia especifica
+			pero que podria ser generica para utilizar otros tipos de ajuste
+			Una de las complicaciones de esta practica fue el manejo de apuntadores
+			el cual conlleva un nivel de abstraccion de los datos especial
+			y mas cuando se ha perdido la practica por otros lenguajes de mas alto nivel
+
+		Silva García Carlos Sebastian
+			Conlusiones	
+*/
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -43,6 +71,7 @@ void pushToMemory(Memory *m, Process *p, Huecos *h, Queue *q);
 /********** *Inicializar estructuras *********/
 
 void initMemory(Memory *m){
+	//Para tener 3000 unidades libres se termina en 4500
 	m->mSize = 4500;
 	m->mOffset = 1500;
 	m->last = NULL;
@@ -72,7 +101,7 @@ Process* initProcess(Process* p, int pId, int pSize){
 
 
 
-/**********PRINTS************/
+/********* Se muestra la informacion de las estrucutras ************/
 
 void printMemoryInfo(Memory *m){
 	Process *cursor = (Process *)malloc(sizeof(Process)); 
@@ -87,7 +116,6 @@ void printMemoryInfo(Memory *m){
 	return;
 }
 
-
 void printHuecosInfo(Huecos *h){
 	Process *cursor = (Process *)malloc(sizeof(Process)); 
 	cursor = h->first;
@@ -98,28 +126,24 @@ void printHuecosInfo(Huecos *h){
 	return;
 }
 
+/**********  Cola  ***********/
 
 void printQueueInfo(Queue *q){
-	//malloc problem
-	//printf("\n\n -------- COLA ---------- \n");
+	printf("\n\n -------- COLA ---------- \n");
 	Process *cursor3 = (Process *)malloc(sizeof(Process)); 
 	cursor3 = q->first;
-	//printf("Nodo: %d en la cola \n", cursor3->pId);
-	//printf("NodoNEXT: %d en la cola \n", q->first->next->pId);
-
-	//EL LOOP INFINITO ERA PORQUE NO HABIA UN NEXT PERO EL PROCESS SI EXISTIA SIEMPRE 
 	while (cursor3->next != NULL) {
     cursor3 = cursor3->next;
-	//printf("\n cursor3 - pid %d", cursor3->pId);
+	printf("\n Siguiente en cola - pid %d", cursor3->pId);
   }
-	//printf("\n----------\n");
+	printf("\n----------\n");
 	return;
 }
 
 
 
 
-/**********  Huecos  ***********/
+/**********  Asignacion de huecos  ***********/
 
 void pushToHuecos(Huecos *h, Process *p){
 	if(h->first == NULL && h->last == NULL){
@@ -135,13 +159,13 @@ void pushToHuecos(Huecos *h, Process *p){
 	return;
 }
 
+/**********  Buscqueda del hueco mas grande para peor ajuste  ***********/
 
 Process* lookForBiggestGap(Memory *m, Huecos *h){
 	//printf("\nBuscando el peor ajuste\n");
 	Process *cursor = (Process *)malloc(sizeof(Process)); 
 	Process *maxHueco = (Process *)malloc(sizeof(Process)); 
 	cursor = m->first;
-	//Volvemos NULL para no regresar basura
 	maxHueco->next = NULL;
 	maxHueco->pId = 0;
 
@@ -149,35 +173,32 @@ Process* lookForBiggestGap(Memory *m, Huecos *h){
 		if(cursor->pAllocated == 0){
 			if(maxHueco == NULL){
 				maxHueco = cursor;
-				//printf("\nprimera asignacion de hueco: %d, con tamaño: %d\n ", maxHueco->pId, maxHueco->pSize);
+				// Primera asignacion
 				return maxHueco;
 			}
 			if(cursor->pSize > maxHueco->pSize){
 				maxHueco = cursor;
-				//printf("\nSe reasigna maxhueco, el máximo es: %d con tamaño %d\n",  maxHueco->pId, maxHueco->pSize);
+				// Si hay un hueco mas grande se reasigna
 			}
-			// printf("Hueco en :: %d, con tamaño: %d\n", cursor->pId, cursor->pSize);
-			//pushToHuecos(h, cursor);
 		}
 		cursor = cursor->next;
 	}
 
 	//Hueco con tamaño maximo
-	//printf("\n Maximo hueco devuelto Pid: %d\n", maxHueco->pId);
 	return maxHueco;
 }
 
 
 
 
-/*************  Queue  ***************/
+/*************  Limpiamos la memoria  ***************/
 
 void cleanMemory(Memory *m, Queue *q){
 	Process *cursor = (Process *)malloc(sizeof(Process)); 
 	cursor = m->first;
 	while(cursor != NULL){
 		if(cursor->pAllocated == 0){
-			//Es un hueco, A POR ÉL
+			//Es un hueco
 			if(cursor->prev == NULL){
 				//Es el inicio de la memoria
 				m->first = cursor->next;
@@ -185,35 +206,35 @@ void cleanMemory(Memory *m, Queue *q){
 			}else{
 				cursor->prev->next = cursor->next;
 				cursor->next->prev = cursor->prev;
-				cursor->next->pLocation = cursor->next->prev->pLocation + cursor->next->prev->pSize; // está bien esto???
+				cursor->next->pLocation = cursor->next->prev->pLocation + cursor->next->prev->pSize; 
+				// Reasignacion
 			}
 			//Eliminar de la memoria real el cursor que ya no está referenciado (garbage collection)
 		}
-		//printf("Hueco con id %d eliminado\n", cursor->pId);
 		cursor = cursor->next;
 	}
 	printf("\n ------- Se limpio la memoria de huecos ---- \n");
 	return;
 }
 
+/*************  Limpiamos la cola  ***************/
 
 void cleanQueue(Memory *m, Queue *q, Huecos *h){
 	Process *cursor = (Process *)malloc(sizeof(Process)); 
 	cursor = q->first;
-
-	// aqui es donde pasan cosas raras//
 
 	while(cursor != NULL){
 		printf("Reinsertando de la cola %d\n", cursor->pId);
 		pushToMemory(m, cursor, h, q);
 		cursor = cursor->next;
 	}
-	//printQueueInfo(q);
+	
 	q->length = 0;
 
 }
 
 
+/*************  Agregamos a la cola  ***************/
 
 void pushToQueue(Queue *q, Process *p, Memory *m, Huecos *h){
 	printf("\n No hay espacio poniendo en cola\n");
@@ -221,58 +242,27 @@ void pushToQueue(Queue *q, Process *p, Memory *m, Huecos *h){
 		//Es el primer nodo
 		q->first = p;
 		q->last = p;
-		// printf("\n***** \n");
-		// printf("\nPRIMER NODO DE LA COLA \n");
-		// printf("\n q->first->pid  %d \n", p->pId);
-		// printf("\n q->first->pid  %d \n", q->first->pId);
-
-		// printf("\n***** \n");
-
-		return;
 	}
 	else if(q->length > 4){
 		printf("\n ------ Límite de a cola alcanzado, haciendo limpieza ------\n");
 		cleanMemory(m, q);
-		//printf("AQUÍ VA A MOSTRAR ESTA WEADA \n");
-		//printQueueInfo(q);
-		// Process *cursor = (Process *)malloc(sizeof(Process)); 
-		// cursor = q->first;
-		// while (cursor->next != NULL) {
-		// 	//printf("\n actual :%d, ursor->next-pid %d ",cursor->pId, cursor->next->pId);
-		// 	cursor = cursor->next;
-		// }
-		//printf("\n AQUI SI SE VE LA QUEYE BIEN ALV getchar() ");
-		//printQueueInfo(q);
-		//getchar();
 		cleanQueue(m, q, h);
-		//printQueueInfo(q);
+		// se limpia la memoria y la cola
+		
 		
 		return;
 	}else{
-	//Apunta al primer nodo, pues se encuentran en una lista diferente a la de la memoria. No hay problema con eso
-	//FALTA: Agregar referencia a next porque no está siendo una cola
-	//printf("\n***** REASIGNANDO COLA *** \n");
-	// //gerry
+
 	Process *cursor = (Process *)malloc(sizeof(Process)); 
 	cursor = q->first;
 	while (cursor->next != NULL) {
     cursor = cursor->next;
-	//printf("\n cursor->next-pid ");
   }
 	cursor->next = p;
 	p->next = NULL;
-	//printf("\n NEW :: cursor->pid : %d cursor->next  %d \n", cursor->pId,cursor->next->pId);
-
-	// p->pLocation = m->last->pLocation + m->last->pSize; ?? location not currently knowed
 	q->length = q->length+1;
-	//printf("Procesos encolados: %d\n", q->length);
-
-
 
 	}
-
-	//printQueueInfo(q);
-
 }
 
 
@@ -280,7 +270,7 @@ void pushToQueue(Queue *q, Process *p, Memory *m, Huecos *h){
 
 
 
-/*************  Memory  ***************/
+/************* Se agrega a la memoria ***************/
 
 void pushToMemory(Memory *m, Process *p, Huecos *h, Queue *q){
 	if(m->first == NULL && m->last == NULL){
@@ -290,7 +280,6 @@ void pushToMemory(Memory *m, Process *p, Huecos *h, Queue *q){
 		p->next = NULL;
 		m->first = p;
 		m->last = p;
-		/// la borro :v m->mSize = m->mSize - p->pSize;
 
 	}else{
 		if((m->mSize - (m->last->pLocation + m->last->pSize)) < p->pSize){
@@ -298,40 +287,36 @@ void pushToMemory(Memory *m, Process *p, Huecos *h, Queue *q){
 			Process *px = (Process *)malloc(sizeof(Process)); 
 		 	px = lookForBiggestGap(m, h);	
 
-			// printf("\n--- px->pSize %d >= p->pSize %d  ---\n", px->pSize, p->pSize);
+			// Se valida si cabe en el maximo hueco
 			if(px->pSize >= p->pSize){
-				//printf("\n---Se encontro un hueco----\n");
 				int newGapSize = px->pSize - p->pSize;
 				px->pId = p->pId;
 				px->pAllocated = 1;
 				px->pSize = p->pSize;
 				printf("\n---Se inserto id: %d un hueco ----\n",px->pId );
 
+				//Si el proceso tiene fragmentacion interna
+				// se crea un hueco en ese espacio
 				if(newGapSize > 0){
 					Process *hueco = (Process*)malloc(sizeof(Process));
 					hueco = initProcess(hueco, -11, newGapSize);
-					//Vuelvo el proceso un hueco con el allocated = 0
-					//printf("\n****\n Reasignacion de apuntadores \n****\n " );
 					hueco->pAllocated = 0;
 					hueco->pLocation = px->pSize + px->pLocation;
 					hueco->next = px->next;
-					//printf("\n****\n hueco->pLocation: %d \n****\n ", hueco->pLocation );
-					//printf("hueco->next->pId: %d \n", hueco->next->pId );
 					px->next = hueco;
 					hueco->prev  = px;
 				}
-				//lookForBiggestGap(m, h);
 			}else{
 				printf("\n ************ \n No cabe en ningun hueco, agregando a la cola \n ************ \n");
 				pushToQueue(q, p, m, h);
 			}
 			
 		}else{
+				//Aun hay espacio en la memoria
 				p->next = NULL;
 				m->last->next = p;
 				p->prev = m->last;
 				p->pLocation = m->last->pLocation + m->last->pSize; 
-				//printf("Agregado al final de la lista en Allocated in: %d\n", p->pLocation);
 				m->last = p; 
 		}
 	}
@@ -339,6 +324,7 @@ void pushToMemory(Memory *m, Process *p, Huecos *h, Queue *q){
 	return;
 }
 
+/************* Se elimina a la memoria ***************/
 
 void popFromMemory(Memory *m, int id){
 	Process *cursor = (Process *)malloc(sizeof(Process)); 
@@ -346,7 +332,6 @@ void popFromMemory(Memory *m, int id){
 	while(cursor != NULL){
 		if(cursor->pId == id){
 			cursor->pAllocated = 0;
-			//Se agrega a huecos
 			printf("Se libero el nodo: %d\n", cursor->pId);
 			return;
 		}
@@ -360,6 +345,7 @@ void popFromMemory(Memory *m, int id){
 /***********  Main  *************/
 
 int main(int argc, char ** argv){
+	//se lee de un archivo
     char * filePath = argv[1];
     int pId, pSize, i;
     FILE *fptr;
@@ -373,6 +359,8 @@ int main(int argc, char ** argv){
 	initHuecos(h);
 	initQueue(q);
 
+	//Inicializacion
+
     if(fptr == NULL){
       printf("Error al abrir el archivo.");   
       exit(1);             
@@ -384,14 +372,13 @@ int main(int argc, char ** argv){
    		Process *p = (Process*)malloc(sizeof(Process));
 		p = initProcess(p, pId, pSize);
    		if (pSize == 0){
-   			//printf("Liberando pr\n");
    			popFromMemory(m, pId);
    		}else{
 			pushToMemory(m, p, h, q);
    		}
 		i++;
-		//getchar();   		
    }
    printf("\n\n Fin del programa \n\n");
     return 0;
 }
+
