@@ -1,5 +1,5 @@
-// Autores:			Silva García Carlos Sebastian
-//					Lopez Santibañez Jimenez Luis Gerardo
+// Autor
+//		Lopez Santibañez Jimenez Luis Gerardo
 
 
 /*
@@ -22,8 +22,6 @@
 			el cual conlleva un nivel de abstraccion de los datos especial
 			y mas cuando se ha perdido la practica por otros lenguajes de mas alto nivel
 
-		Silva García Carlos Sebastian
-			Conlusiones	
 */
 
 
@@ -64,8 +62,8 @@ typedef struct Queue{
 	Process *first;
 }Queue;
 
-void pushToQueue(Queue *q, Process *p, Memory *m, Huecos *h);
-void pushToMemory(Memory *m, Process *p, Huecos *h, Queue *q);
+void enqueue(Queue *q, Process *p, Memory *m, Huecos *h);
+void addProcess(Memory *m, Process *p, Huecos *h, Queue *q);
 
 
 /********** *Inicializar estructuras *********/
@@ -103,7 +101,7 @@ Process* initProcess(Process* p, int pId, int pSize){
 
 /********* Se muestra la informacion de las estrucutras ************/
 
-void printMemoryInfo(Memory *m){
+void showProcesses(Memory *m){
 	Process *cursor = (Process *)malloc(sizeof(Process)); 
 	cursor = m->first;
 	printf("\n\n -----------Estado de la memoria-------	 \n");
@@ -116,7 +114,7 @@ void printMemoryInfo(Memory *m){
 	return;
 }
 
-void printHuecosInfo(Huecos *h){
+void showHuecos(Huecos *h){
 	Process *cursor = (Process *)malloc(sizeof(Process)); 
 	cursor = h->first;
 	while(cursor != NULL){
@@ -128,7 +126,7 @@ void printHuecosInfo(Huecos *h){
 
 /**********  Cola  ***********/
 
-void printQueueInfo(Queue *q){
+void showQueue(Queue *q){
 	printf("\n\n -------- COLA ---------- \n");
 	Process *cursor3 = (Process *)malloc(sizeof(Process)); 
 	cursor3 = q->first;
@@ -161,7 +159,7 @@ void pushToHuecos(Huecos *h, Process *p){
 
 /**********  Buscqueda del hueco mas grande para peor ajuste  ***********/
 
-Process* lookForBiggestGap(Memory *m, Huecos *h){
+Process* buscarPeorAjuste(Memory *m, Huecos *h){
 	//printf("\nBuscando el peor ajuste\n");
 	Process *cursor = (Process *)malloc(sizeof(Process)); 
 	Process *maxHueco = (Process *)malloc(sizeof(Process)); 
@@ -193,7 +191,7 @@ Process* lookForBiggestGap(Memory *m, Huecos *h){
 
 /*************  Limpiamos la memoria  ***************/
 
-void cleanMemory(Memory *m, Queue *q){
+void compactacion(Memory *m, Queue *q){
 	Process *cursor = (Process *)malloc(sizeof(Process)); 
 	cursor = m->first;
 	while(cursor != NULL){
@@ -219,13 +217,13 @@ void cleanMemory(Memory *m, Queue *q){
 
 /*************  Limpiamos la cola  ***************/
 
-void cleanQueue(Memory *m, Queue *q, Huecos *h){
+void dequeue(Memory *m, Queue *q, Huecos *h){
 	Process *cursor = (Process *)malloc(sizeof(Process)); 
 	cursor = q->first;
 
 	while(cursor != NULL){
 		printf("Reinsertando de la cola %d\n", cursor->pId);
-		pushToMemory(m, cursor, h, q);
+		addProcess(m, cursor, h, q);
 		cursor = cursor->next;
 	}
 	
@@ -236,7 +234,7 @@ void cleanQueue(Memory *m, Queue *q, Huecos *h){
 
 /*************  Agregamos a la cola  ***************/
 
-void pushToQueue(Queue *q, Process *p, Memory *m, Huecos *h){
+void enqueue(Queue *q, Process *p, Memory *m, Huecos *h){
 	printf("\n No hay espacio poniendo en cola\n");
 	if(q->first == NULL && q->last == NULL){
 		//Es el primer nodo
@@ -245,8 +243,8 @@ void pushToQueue(Queue *q, Process *p, Memory *m, Huecos *h){
 	}
 	else if(q->length > 4){
 		printf("\n ------ Límite de a cola alcanzado, haciendo limpieza ------\n");
-		cleanMemory(m, q);
-		cleanQueue(m, q, h);
+		compactacion(m, q);
+		dequeue(m, q, h);
 		// se limpia la memoria y la cola
 		
 		
@@ -272,7 +270,7 @@ void pushToQueue(Queue *q, Process *p, Memory *m, Huecos *h){
 
 /************* Se agrega a la memoria ***************/
 
-void pushToMemory(Memory *m, Process *p, Huecos *h, Queue *q){
+void addProcess(Memory *m, Process *p, Huecos *h, Queue *q){
 	if(m->first == NULL && m->last == NULL){
 		p->pLocation = m->mOffset;
 		//Es el primer nodo
@@ -285,7 +283,7 @@ void pushToMemory(Memory *m, Process *p, Huecos *h, Queue *q){
 		if((m->mSize - (m->last->pLocation + m->last->pSize)) < p->pSize){
 			printf("\n -----Ya no cabe en lista, buscando en huecos -----");
 			Process *px = (Process *)malloc(sizeof(Process)); 
-		 	px = lookForBiggestGap(m, h);	
+		 	px = buscarPeorAjuste(m, h);	
 
 			// Se valida si cabe en el maximo hueco
 			if(px->pSize >= p->pSize){
@@ -308,7 +306,7 @@ void pushToMemory(Memory *m, Process *p, Huecos *h, Queue *q){
 				}
 			}else{
 				printf("\n ************ \n No cabe en ningun hueco, agregando a la cola \n ************ \n");
-				pushToQueue(q, p, m, h);
+				enqueue(q, p, m, h);
 			}
 			
 		}else{
@@ -320,7 +318,7 @@ void pushToMemory(Memory *m, Process *p, Huecos *h, Queue *q){
 				m->last = p; 
 		}
 	}
-	printMemoryInfo(m);
+	showProcesses(m);
 	return;
 }
 
@@ -374,7 +372,7 @@ int main(int argc, char ** argv){
    		if (pSize == 0){
    			popFromMemory(m, pId);
    		}else{
-			pushToMemory(m, p, h, q);
+			addProcess(m, p, h, q);
    		}
 		i++;
    }
